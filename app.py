@@ -10,12 +10,10 @@ st.set_page_config(
     layout="wide"
 )
 
-
-
 st.title("📊 Internal Hackathon : Enterprise Sales Analytics Dashboard")
 
 # --------------------------------------------------
-# Create Snowflake Connection (Streamlit Cloud)
+# Snowflake Connection (Streamlit Cloud)
 # --------------------------------------------------
 @st.cache_resource
 def get_connection():
@@ -62,10 +60,7 @@ region_df = load_df("""
     SELECT * FROM VW_REVENUE_BY_REGION
 """)
 
-st.bar_chart(
-    region_df.set_index("REGION")["TOTAL_REVENUE"]
-)
-
+st.bar_chart(region_df.set_index("REGION")["TOTAL_REVENUE"])
 st.dataframe(region_df, use_container_width=True)
 
 st.divider()
@@ -79,10 +74,7 @@ cat_df = load_df("""
     SELECT * FROM VW_REVENUE_BY_CATEGORY
 """)
 
-st.bar_chart(
-    cat_df.set_index("CATEGORY")["TOTAL_REVENUE"]
-)
-
+st.bar_chart(cat_df.set_index("CATEGORY")["TOTAL_REVENUE"])
 st.dataframe(cat_df, use_container_width=True)
 
 st.divider()
@@ -93,19 +85,14 @@ st.divider()
 st.header("🏆 Top 5 Customers")
 
 cust_df = load_df("""
-    SELECT
-        NAME,
-        TOTAL_REVENUE
+    SELECT NAME, TOTAL_REVENUE
     FROM VW_TOP_CUSTOMERS
     ORDER BY TOTAL_REVENUE DESC
     LIMIT 5
 """)
 
 st.dataframe(cust_df, use_container_width=True)
-
-st.bar_chart(
-    cust_df.set_index("NAME")["TOTAL_REVENUE"]
-)
+st.bar_chart(cust_df.set_index("NAME")["TOTAL_REVENUE"])
 
 st.divider()
 
@@ -125,10 +112,7 @@ trend_df["YEAR_MONTH"] = (
 
 trend_df = trend_df.sort_values("YEAR_MONTH")
 
-st.line_chart(
-    trend_df.set_index("YEAR_MONTH")["TOTAL_REVENUE"]
-)
-
+st.line_chart(trend_df.set_index("YEAR_MONTH")["TOTAL_REVENUE"])
 st.dataframe(trend_df, use_container_width=True)
 
 st.divider()
@@ -151,11 +135,25 @@ growth_df["YEAR_MONTH"] = (
 
 growth_df = growth_df.sort_values("YEAR_MONTH")
 
-st.line_chart(
-    growth_df.set_index("YEAR_MONTH")["GROWTH_PERCENT"]
+st.line_chart(growth_df.set_index("YEAR_MONTH")["GROWTH_PERCENT"])
+st.dataframe(growth_df, use_container_width=True)
+
+st.divider()
+
+# --------------------------------------------------
+# NEW METRIC: Repeat Customers by Region
+# --------------------------------------------------
+st.header("🔁 Repeat Customers by Region")
+
+repeat_df = load_df("""
+    SELECT * FROM VW_REPEAT_CUSTOMERS_BY_REGION
+""")
+
+st.bar_chart(
+    repeat_df.set_index("REGION")["REPEAT_CUSTOMER_COUNT"]
 )
 
-st.dataframe(growth_df, use_container_width=True)
+st.dataframe(repeat_df, use_container_width=True)
 
 # --------------------------------------------------
 # Footer
