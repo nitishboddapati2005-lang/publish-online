@@ -2,20 +2,35 @@ import streamlit as st
 import snowflake.connector
 import pandas as pd
 
+# --------------------------------------------------
+# Page Config
+# --------------------------------------------------
 st.set_page_config(
     page_title="Enterprise Sales Dashboard",
     layout="wide"
 )
 
-st.title("📊 Internal hackton : Enterprise Sales Analytics Dashboard")
+st.title("📊 Internal Hackathon : Enterprise Sales Analytics Dashboard")
 
 # --------------------------------------------------
-# Snowflake Session (NO credentials needed)
+# Create Snowflake Connection (Streamlit Cloud)
 # --------------------------------------------------
-session = get_active_session()
+@st.cache_resource
+def get_connection():
+    return snowflake.connector.connect(
+        user=st.secrets["snowflake"]["user"],
+        password=st.secrets["snowflake"]["password"],
+        account=st.secrets["snowflake"]["account"],
+        warehouse=st.secrets["snowflake"]["warehouse"],
+        database=st.secrets["snowflake"]["database"],
+        schema=st.secrets["snowflake"]["schema"],
+        role=st.secrets["snowflake"]["role"]
+    )
+
+conn = get_connection()
 
 def load_df(sql):
-    return session.sql(sql).to_pandas()
+    return pd.read_sql(sql, conn)
 
 # --------------------------------------------------
 # Executive Summary
@@ -23,7 +38,7 @@ def load_df(sql):
 st.header("📌 Executive Summary")
 
 exec_df = load_df("""
-    SELECT * FROM GOLD.VW_EXEC_SUMMARY
+    SELECT * FROM VW_EXEC_SUMMARY
 """)
 
 c1, c2, c3, c4, c5 = st.columns(5)
@@ -42,7 +57,7 @@ st.divider()
 st.header("🌍 Revenue by Region")
 
 region_df = load_df("""
-    SELECT * FROM GOLD.VW_REVENUE_BY_REGION
+    SELECT * FROM VW_REVENUE_BY_REGION
 """)
 
 st.bar_chart(
@@ -59,7 +74,7 @@ st.divider()
 st.header("📦 Revenue by Category")
 
 cat_df = load_df("""
-    SELECT * FROM GOLD.VW_REVENUE_BY_CATEGORY
+    SELECT * FROM VW_REVENUE_BY_CATEGORY
 """)
 
 st.bar_chart(
@@ -71,7 +86,7 @@ st.dataframe(cat_df, use_container_width=True)
 st.divider()
 
 # --------------------------------------------------
-# Top 5 Customers ONLY
+# Top 5 Customers
 # --------------------------------------------------
 st.header("🏆 Top 5 Customers")
 
@@ -79,7 +94,7 @@ cust_df = load_df("""
     SELECT
         NAME,
         TOTAL_REVENUE
-    FROM GOLD.VW_TOP_CUSTOMERS
+    FROM VW_TOP_CUSTOMERS
     ORDER BY TOTAL_REVENUE DESC
     LIMIT 5
 """)
@@ -98,7 +113,7 @@ st.divider()
 st.header("📈 Monthly Revenue Trend")
 
 trend_df = load_df("""
-    SELECT * FROM GOLD.VW_MONTHLY_TREND
+    SELECT * FROM VW_MONTHLY_TREND
 """)
 
 trend_df["YEAR_MONTH"] = (
@@ -122,10 +137,9 @@ st.divider()
 st.header("📊 Monthly Revenue Growth (%)")
 
 growth_df = load_df("""
-    SELECT * FROM GOLD.VW_MONTHLY_REVENUE_GROWTH
+    SELECT * FROM VW_MONTHLY_REVENUE_GROWTH
 """)
 
-# Remove first month (no previous revenue)
 growth_df = growth_df.dropna(subset=["GROWTH_PERCENT"])
 
 growth_df["YEAR_MONTH"] = (
@@ -144,5 +158,4 @@ st.dataframe(growth_df, use_container_width=True)
 # --------------------------------------------------
 # Footer
 # --------------------------------------------------
-st.caption("Source: Snowflake ENTERPRISE_DB | GOLD Layer | Streamlit in Snowflake")
-
+st.caption("Source: Snowflake ENTERPRISE_DB | GOLD Layer | Streamlit Cloud")
